@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== User & Auth ====================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // argon2 hashed
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  coupleAsUser1   Couple?       @relation("CoupleUser1")
+  coupleAsUser2   Couple?       @relation("CoupleUser2")
+  sentInvites     CoupleInvite[] @relation("InviteSender")
+  receivedInvites CoupleInvite[] @relation("InviteReceiver")
+  reviews         Review[]
+}
+
+// ==================== Couple ====================
+
+model Couple {
+  id          String   @id @default(cuid())
+  name        String?  // 커플 닉네임
+  profileUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user1Id String @unique
+  user2Id String @unique
+  user1   User   @relation("CoupleUser1", fields: [user1Id], references: [id])
+  user2   User   @relation("CoupleUser2", fields: [user2Id], references: [id])
+
+  dateRecords DateRecord[]
+  reviews     Review[]
+}
+
+model CoupleInvite {
+  id        String             @id @default(cuid())
+  code      String             @unique
+  status    CoupleInviteStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime           @default(now())
+
+  senderId   String
+  receiverId String?
+  sender     User   @relation("InviteSender", fields: [senderId], references: [id])
+  receiver   User?  @relation("InviteReceiver", fields: [receiverId], references: [id])
+}
+
+enum CoupleInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+// ==================== Restaurant ====================
+
+model Restaurant {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  latitude  Float?
+  longitude Float?
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dateRecords DateRecord[]
+  reviews     Review[]
+}
+
+// ==================== Date Record ====================
+
+model DateRecord {
+  id        String   @id @default(cuid())
+  date      DateTime
+  memo      String?
+  amount    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coupleId     String
+  restaurantId String
+  couple       Couple     @relation(fields: [coupleId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  review       Review?
+}
+
+// ==================== Review ====================
+
+model Review {
+  id         String           @id @default(cuid())
+  content    String?
+  rating     Int
+  isVerified Boolean          @default(false)
+  visibility ReviewVisibility @default(PRIVATE)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  coupleId     String
+  restaurantId String
+  dateRecordId String     @unique
+  authorId     String
+  couple       Couple     @relation(fields: [coupleId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  dateRecord   DateRecord @relation(fields: [dateRecordId], references: [id])
+  author       User       @relation(fields: [authorId], references: [id])
+  images       ReviewImage[]
+  tags         ReviewTag[]
+}
+
+enum ReviewVisibility {
+  PRIVATE
+  COMMUNITY
+  PUBLIC
+}
+
+model ReviewImage {
+  id        String          @id @default(cuid())
+  url       String
+  type      ReviewImageType
+  createdAt DateTime        @default(now())
+
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id])
+}
+
+enum ReviewImageType {
+  RECEIPT
+  PHOTO
+}
+
+model ReviewTag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  reviews Review[]
+}
