@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 // ==================== User & Auth ====================
@@ -45,16 +44,17 @@ model Couple {
 }
 
 model CoupleInvite {
-  id        String             @id @default(cuid())
-  code      String             @unique
-  status    CoupleInviteStatus @default(PENDING)
-  expiresAt DateTime
-  createdAt DateTime           @default(now())
+  id         String             @id @default(cuid())
+  inviteCode String             @unique
+  coupleName String?
+  status     CoupleInviteStatus @default(PENDING)
+  expiresAt  DateTime
+  createdAt  DateTime           @default(now())
 
-  senderId   String
-  receiverId String?
-  sender     User   @relation("InviteSender", fields: [senderId], references: [id])
-  receiver   User?  @relation("InviteReceiver", fields: [receiverId], references: [id])
+  inviterId String
+  inviteeId String?
+  inviter   User   @relation("InviteSender", fields: [inviterId], references: [id])
+  invitee   User?  @relation("InviteReceiver", fields: [inviteeId], references: [id])
 }
 
 enum CoupleInviteStatus {
@@ -67,14 +67,15 @@ enum CoupleInviteStatus {
 // ==================== Restaurant ====================
 
 model Restaurant {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  latitude  Float?
-  longitude Float?
-  category  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  category     String?
+  kakaoPlaceId String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   dateRecords DateRecord[]
   reviews     Review[]
@@ -128,12 +129,12 @@ enum ReviewVisibility {
 
 model ReviewImage {
   id        String          @id @default(cuid())
-  url       String
+  imageUrl  String
   type      ReviewImageType
   createdAt DateTime        @default(now())
 
   reviewId String
-  review   Review @relation(fields: [reviewId], references: [id])
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 }
 
 enum ReviewImageType {
