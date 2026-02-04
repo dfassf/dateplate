@@ -7,6 +7,11 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@dateplate/shared": ["../../packages/shared/src/index.ts"],
+      "@dateplate/shared/*": ["../../packages/shared/src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
