@@ -8,6 +8,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Couple from './pages/Couple';
+import Restaurants from './pages/Restaurants';
+import DateRecords from './pages/DateRecords';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +34,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="couple"
+              element={
+                <ProtectedRoute>
+                  <Couple />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="restaurants"
+              element={
+                <ProtectedRoute>
+                  <Restaurants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="dates"
+              element={
+                <ProtectedRoute>
+                  <DateRecords />
                 </ProtectedRoute>
               }
             />
