@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { DateRecordsService } from './date-records.service';
 import { CreateDateRecordDto, UpdateDateRecordDto } from './dto';
 import { JwtAuthGuard } from '../common/guards';
