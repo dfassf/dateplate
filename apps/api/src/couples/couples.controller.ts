@@ -7,7 +7,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { CouplesService } from './couples.service';
 import { CreateInviteDto, AcceptInviteDto, UpdateCoupleDto } from './dto';
 import { JwtAuthGuard } from '../common/guards';
