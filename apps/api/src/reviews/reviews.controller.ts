@@ -1,76 +1,37 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import type { User } from '@prisma/client';
-import { ReviewsService } from './reviews.service';
-import { CreateReviewDto, UpdateReviewDto } from './dto';
-import { JwtAuthGuard } from '../common/guards';
-import { CurrentUser } from '../common/decorators';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { ReviewsService } from './reviews.service.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { CreateReviewDto, UpdateReviewDto } from './dto/index.js';
+import { PaginationDto } from '../common/dto/pagination.dto.js';
 
 @Controller('reviews')
+@UseGuards(JwtAuthGuard)
 export class ReviewsController {
   constructor(private reviewsService: ReviewsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  async create(@CurrentUser() user: User, @Body() dto: CreateReviewDto) {
-    return this.reviewsService.create(user.id, dto);
+  create(@CurrentUser() user: any, @Body() dto: CreateReviewDto) {
+    return this.reviewsService.create(dto, user.id);
+  }
+
+  @Get()
+  findByTeam(@Query('teamId') teamId: string, @Query() pagination: PaginationDto) {
+    return this.reviewsService.findByTeam(teamId, pagination);
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async findById(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.reviewsService.findById(user.id, id);
+  findOne(@Param('id') id: string) {
+    return this.reviewsService.findById(id);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async update(
-    @CurrentUser() user: User,
-    @Param('id') id: string,
-    @Body() dto: UpdateReviewDto,
-  ) {
-    return this.reviewsService.update(user.id, id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateReviewDto) {
+    return this.reviewsService.update(id, dto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async delete(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.reviewsService.delete(user.id, id);
-  }
-
-  @Get('restaurant/:restaurantId/public')
-  async findPublicReviews(
-    @Param('restaurantId') restaurantId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.reviewsService.findPublicReviews(
-      restaurantId,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
-    );
-  }
-
-  @Get('restaurant/:restaurantId/community')
-  @UseGuards(JwtAuthGuard)
-  async findCommunityReviews(
-    @Param('restaurantId') restaurantId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.reviewsService.findCommunityReviews(
-      restaurantId,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
-    );
+  remove(@Param('id') id: string) {
+    return this.reviewsService.remove(id);
   }
 }

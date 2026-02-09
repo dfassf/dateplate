@@ -1,9 +1,7 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
-import type { User } from '@prisma/client';
-import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto';
-import { JwtAuthGuard } from '../common/guards';
-import { CurrentUser } from '../common/decorators';
+import { UsersService } from './users.service.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -11,17 +9,12 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get('me')
-  async getMe(@CurrentUser() user: User) {
+  getMe(@CurrentUser() user: any) {
     return this.usersService.findById(user.id);
   }
 
   @Patch('me')
-  async updateMe(@CurrentUser() user: User, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(user.id, dto);
-  }
-
-  @Get('me/couple')
-  async getMyCouple(@CurrentUser() user: User) {
-    return this.usersService.getMyCouple(user.id);
+  updateMe(@CurrentUser() user: any, @Body() body: { name?: string }) {
+    return this.usersService.updateProfile(user.id, body);
   }
 }

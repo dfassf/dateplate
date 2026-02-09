@@ -12,57 +12,56 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String   // argon2 hashed
+  password  String
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  coupleAsUser1   Couple?       @relation("CoupleUser1")
-  coupleAsUser2   Couple?       @relation("CoupleUser2")
-  sentInvites     CoupleInvite[] @relation("InviteSender")
-  receivedInvites CoupleInvite[] @relation("InviteReceiver")
-  reviews         Review[]
-}
-
-// ==================== Couple ====================
-
-model Couple {
-  id          String   @id @default(cuid())
-  name        String?  // 커플 닉네임
-  profileUrl  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user1Id String @unique
-  user2Id String @unique
-  user1   User   @relation("CoupleUser1", fields: [user1Id], references: [id])
-  user2   User   @relation("CoupleUser2", fields: [user2Id], references: [id])
-
-  dateRecords DateRecord[]
+  teamMembers TeamMember[]
+  sentInvites TeamInvite[] @relation("InviteSender")
   reviews     Review[]
 }
 
-model CoupleInvite {
-  id         String             @id @default(cuid())
-  inviteCode String             @unique
-  coupleName String?
-  status     CoupleInviteStatus @default(PENDING)
-  expiresAt  DateTime
-  createdAt  DateTime           @default(now())
+// ==================== Team ====================
 
-  inviterId String
-  inviteeId String?
-  inviter   User   @relation("InviteSender", fields: [inviterId], references: [id])
-  invitee   User?  @relation("InviteReceiver", fields: [inviteeId], references: [id])
+model Team {
+  id         String   @id @default(cuid())
+  name       String
+  profileUrl String?
+  leaderId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  members      TeamMember[]
+  invites      TeamInvite[]
+  dinnerRecords DinnerRecord[]
+  reviews      Review[]
 }
 
-enum CoupleInviteStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  CANCELLED
+model TeamMember {
+  id     String @id @default(cuid())
+  role   String @default("MEMBER") // LEADER | MEMBER
+  userId String
+  teamId String
+
+  user User @relation(fields: [userId], references: [id])
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, teamId])
+}
+
+model TeamInvite {
+  id         String   @id @default(cuid())
+  inviteCode String   @unique
+  status     String   @default("PENDING") // PENDING | ACCEPTED | EXPIRED | CANCELLED
+  inviteeId  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  teamId    String
+  inviterId String
+  team      Team @relation(fields: [teamId], references: [id])
+  inviter   User @relation("InviteSender", fields: [inviterId], references: [id])
 }
 
 // ==================== Restaurant ====================
@@ -78,23 +77,24 @@ model Restaurant {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  dateRecords DateRecord[]
-  reviews     Review[]
+  dinnerRecords DinnerRecord[]
+  reviews       Review[]
 }
 
-// ==================== Date Record ====================
+// ==================== Dinner Record ====================
 
-model DateRecord {
-  id        String   @id @default(cuid())
-  date      DateTime
-  memo      String?
-  amount    Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model DinnerRecord {
+  id          String   @id @default(cuid())
+  date        DateTime
+  memo        String?
+  totalAmount Int?
+  headcount   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  coupleId     String
+  teamId       String
   restaurantId String
-  couple       Couple     @relation(fields: [coupleId], references: [id])
+  team         Team       @relation(fields: [teamId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   review       Review?
 }
@@ -102,45 +102,34 @@ model DateRecord {
 // ==================== Review ====================
 
 model Review {
-  id         String           @id @default(cuid())
+  id         String   @id @default(cuid())
   content    String?
   rating     Int
-  isVerified Boolean          @default(false)
-  visibility ReviewVisibility @default(PRIVATE)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  isVerified Boolean  @default(false)
+  visibility String   @default("PRIVATE") // PRIVATE | COMMUNITY | PUBLIC
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  coupleId     String
+  teamId       String
   restaurantId String
-  dateRecordId String     @unique
+  dinnerRecordId String @unique
   authorId     String
-  couple       Couple     @relation(fields: [coupleId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  dateRecord   DateRecord @relation(fields: [dateRecordId], references: [id])
-  author       User       @relation(fields: [authorId], references: [id])
+  team         Team         @relation(fields: [teamId], references: [id])
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  dinnerRecord DinnerRecord @relation(fields: [dinnerRecordId], references: [id])
+  author       User         @relation(fields: [authorId], references: [id])
   images       ReviewImage[]
   tags         ReviewTag[]
 }
 
-enum ReviewVisibility {
-  PRIVATE
-  COMMUNITY
-  PUBLIC
-}
-
 model ReviewImage {
-  id        String          @id @default(cuid())
+  id        String   @id @default(cuid())
   imageUrl  String
-  type      ReviewImageType
-  createdAt DateTime        @default(now())
+  type      String // RECEIPT | PHOTO
+  createdAt DateTime @default(now())
 
   reviewId String
   review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-}
-
-enum ReviewImageType {
-  RECEIPT
-  PHOTO
 }
 
 model ReviewTag {

@@ -1,5 +1,5 @@
 {
-  "name": "@dateplate/shared",
+  "name": "@hoesikplate/shared",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",
@@ -9,6 +9,6 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.7.3"
   }
 }
