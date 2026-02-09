@@ -1,23 +1,23 @@
 {
-  "name": "dateplate",
+  "name": "hoesikplate",
   "version": "0.0.1",
   "private": true,
-  "description": "커플 미식 아카이빙 플랫폼",
+  "description": "팀/회사 기반 회식 아카이빙 플랫폼",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
-    "dev:api": "pnpm --filter @dateplate/api dev",
-    "dev:web": "pnpm --filter @dateplate/web dev",
+    "dev:api": "pnpm --filter @hoesikplate/api dev",
+    "dev:web": "pnpm --filter @hoesikplate/web dev",
     "build": "pnpm -r run build",
-    "build:api": "pnpm --filter @dateplate/api build",
-    "build:web": "pnpm --filter @dateplate/web build",
+    "build:api": "pnpm --filter @hoesikplate/api build",
+    "build:web": "pnpm --filter @hoesikplate/web build",
     "lint": "pnpm -r run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm -r run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "prettier": "^3.2.0",
-    "typescript": "^5.3.0"
+    "@types/node": "^22.10.7",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">=20.0.0",

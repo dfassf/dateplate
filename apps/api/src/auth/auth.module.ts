@@ -1,21 +1,20 @@
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthService } from './auth.service.js';
+import { AuthController } from './auth.controller.js';
+import { JwtStrategy } from './jwt.strategy.js';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule,
     JwtModule.registerAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService): JwtModuleOptions => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ?? '7d') as '7d',
-        },
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET', 'hoesikplate-dev-secret'),
+        signOptions: { expiresIn: '7d' },
       }),
     }),
   ],

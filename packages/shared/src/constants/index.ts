@@ -1,49 +1,34 @@
-// Review Visibility
-export const REVIEW_VISIBILITY = {
-  PRIVATE: 'PRIVATE',
-  COMMUNITY: 'COMMUNITY',
-  PUBLIC: 'PUBLIC',
+export const TEAM_ROLE = {
+  LEADER: 'LEADER',
+  MEMBER: 'MEMBER',
 } as const;
 
-// Review Image Type
-export const REVIEW_IMAGE_TYPE = {
-  RECEIPT: 'RECEIPT',
-  PHOTO: 'PHOTO',
-} as const;
-
-// Couple Invite Status
-export const COUPLE_INVITE_STATUS = {
+export const TEAM_INVITE_STATUS = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   EXPIRED: 'EXPIRED',
   CANCELLED: 'CANCELLED',
 } as const;
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    REFRESH: '/auth/refresh',
-    LOGOUT: '/auth/logout',
-  },
-  USERS: {
-    ME: '/users/me',
-    UPDATE: '/users/me',
-  },
-  COUPLES: {
-    BASE: '/couples',
-    INVITE: '/couples/invite',
-    ACCEPT: '/couples/accept',
-  },
-  RESTAURANTS: {
-    BASE: '/restaurants',
-    SEARCH: '/restaurants/search',
-  },
-  DATE_RECORDS: {
-    BASE: '/date-records',
-  },
-  REVIEWS: {
-    BASE: '/reviews',
-  },
+export const REVIEW_VISIBILITY = {
+  PRIVATE: 'PRIVATE',
+  COMMUNITY: 'COMMUNITY',
+  PUBLIC: 'PUBLIC',
 } as const;
+
+export const REVIEW_IMAGE_TYPE = {
+  RECEIPT: 'RECEIPT',
+  PHOTO: 'PHOTO',
+} as const;
+
+export const DEFAULT_TAGS = [
+  '단체회식좋은',
+  '분위기좋은',
+  '룸있는',
+  '조용한',
+  '2차하기좋은',
+  '가성비좋은',
+  '고급스러운',
+  '주차편한',
+  '역근처',
+] as const;
