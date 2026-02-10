@@ -1,0 +1,13 @@
+[build]
+  command = "npm install -g pnpm && pnpm install && pnpm --filter @hoesikplate/web build"
+  publish = "apps/web/dist"
+  base = "."
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "8.15.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

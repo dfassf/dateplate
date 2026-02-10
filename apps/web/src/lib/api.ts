@@ -11,6 +11,7 @@ import type {
   DinnerRecord,
   Restaurant,
   Review,
+  User,
 } from '@hoesikplate/shared';
 
 const api = axios.create({
@@ -30,6 +31,10 @@ export const authApi = {
   register: (data: RegisterRequest) => api.post<ApiResponse<LoginResponse>>('/auth/register', data),
 };
 
+export const userApi = {
+  getMe: () => api.get<ApiResponse<User>>('/users/me'),
+};
+
 export const teamApi = {
   create: (data: { name: string }) => api.post<ApiResponse<Team>>('/teams', data),
   getMyTeams: () => api.get<ApiResponse<Team[]>>('/teams'),
@@ -44,6 +49,7 @@ export const dinnerApi = {
   getByTeam: (teamId: string, page = 1, limit = 20) =>
     api.get<PaginatedResponse<DinnerRecord>>('/dinners', { params: { teamId, page, limit } }),
   getById: (id: string) => api.get<ApiResponse<DinnerRecord>>(`/dinners/${id}`),
+  delete: (id: string) => api.delete<ApiResponse<{ deleted: boolean }>>(`/dinners/${id}`),
 };
 
 export const restaurantApi = {
@@ -57,6 +63,7 @@ export const reviewApi = {
     api.post<ApiResponse<Review>>('/reviews', data),
   getByTeam: (teamId: string, page = 1, limit = 20) =>
     api.get<PaginatedResponse<Review>>('/reviews', { params: { teamId, page, limit } }),
+  delete: (id: string) => api.delete<ApiResponse<{ deleted: boolean }>>(`/reviews/${id}`),
 };
 
 export default api;

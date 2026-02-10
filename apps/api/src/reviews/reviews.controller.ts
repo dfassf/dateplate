@@ -2,8 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } f
 import { ReviewsService } from './reviews.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
-import { CreateReviewDto, UpdateReviewDto } from './dto/index.js';
-import { PaginationDto } from '../common/dto/pagination.dto.js';
+import { CreateReviewDto, UpdateReviewDto, ReviewQueryDto } from './dto/index.js';
 
 @Controller('reviews')
 @UseGuards(JwtAuthGuard)
@@ -16,8 +15,8 @@ export class ReviewsController {
   }
 
   @Get()
-  findByTeam(@Query('teamId') teamId: string, @Query() pagination: PaginationDto) {
-    return this.reviewsService.findByTeam(teamId, pagination);
+  findByTeam(@Query() query: ReviewQueryDto) {
+    return this.reviewsService.findByTeam(query.teamId, query);
   }
 
   @Get(':id')
@@ -26,12 +25,12 @@ export class ReviewsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateReviewDto) {
-    return this.reviewsService.update(id, dto);
+  update(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: UpdateReviewDto) {
+    return this.reviewsService.update(id, user.id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reviewsService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.reviewsService.remove(id, user.id);
   }
 }
