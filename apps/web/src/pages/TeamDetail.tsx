@@ -19,9 +19,11 @@ export default function TeamDetail() {
           dinnerApi.getByTeam(teamId),
         ]);
         setTeam(teamRes.data.data);
-        setDinners(dinnerRes.data.data);
-      } catch {
-        /* ignore */
+        // PaginatedResponse의 경우 { data: { data: [], total, page, limit } } 형식
+        const paginatedData = dinnerRes.data.data as any;
+        setDinners(Array.isArray(paginatedData) ? paginatedData : (paginatedData?.data || []));
+      } catch (err) {
+        console.error('팀 정보 로드 실패:', err);
       } finally {
         setLoading(false);
       }

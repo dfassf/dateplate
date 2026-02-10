@@ -11,7 +11,10 @@ export default function Dashboard() {
     teamApi
       .getMyTeams()
       .then((res) => setTeams(res.data.data))
-      .catch(() => {})
+      .catch((err) => {
+        console.error('팀 목록 조회 실패:', err);
+        setTeams([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

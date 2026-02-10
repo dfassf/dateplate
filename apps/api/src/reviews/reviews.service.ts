@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateReviewDto, UpdateReviewDto } from './dto/index.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
@@ -38,8 +38,11 @@ export class ReviewsService {
     return review;
   }
 
-  async update(id: string, dto: UpdateReviewDto) {
-    await this.findById(id);
+  async update(id: string, userId: string, dto: UpdateReviewDto) {
+    const review = await this.findById(id);
+    if (review.authorId !== userId) {
+      throw new ForbiddenException('본인이 작성한 리뷰만 수정할 수 있습니다');
+    }
     return this.prisma.review.update({
       where: { id },
       data: dto,
@@ -47,8 +50,11 @@ export class ReviewsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findById(id);
+  async remove(id: string, userId: string) {
+    const review = await this.findById(id);
+    if (review.authorId !== userId) {
+      throw new ForbiddenException('본인이 작성한 리뷰만 삭제할 수 있습니다');
+    }
     await this.prisma.review.delete({ where: { id } });
     return { deleted: true };
   }
