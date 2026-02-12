@@ -18,7 +18,7 @@ export default function Register() {
     setLoading(true);
     try {
       const res = await authApi.register({ email, password, name });
-      setAuth(res.data.user, res.data.accessToken);
+      setAuth(res.data.data.user, res.data.data.accessToken);
       navigate('/dashboard');
     } catch {
       setError('회원가입에 실패했습니다. 이미 존재하는 이메일일 수 있습니다.');
