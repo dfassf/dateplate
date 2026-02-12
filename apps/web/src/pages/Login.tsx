@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await authApi.login({ email, password });
-      setAuth(res.data.user, res.data.accessToken);
+      setAuth(res.data.data.user, res.data.data.accessToken);
       navigate('/dashboard');
     } catch {
       setError('이메일 또는 비밀번호가 틀렸습니다');

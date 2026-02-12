@@ -14,8 +14,10 @@ import type {
   User,
 } from '@hoesikplate/shared';
 
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseURL,
 });
 
 api.interceptors.request.use((config) => {
