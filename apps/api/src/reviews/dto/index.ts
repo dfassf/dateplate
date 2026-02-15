@@ -1,5 +1,7 @@
 import { IsString, IsOptional, IsInt, Min, Max, IsIn } from 'class-validator';
 
+export * from './review-query.dto.js';
+
 export class CreateReviewDto {
   @IsString()
   dinnerRecordId!: string;

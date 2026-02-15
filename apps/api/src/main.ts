@@ -14,9 +14,9 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
-
   app.useGlobalInterceptors(new ResponseInterceptor());
+
+  app.enableCors();
 
   const port = Number(process.env.PORT) || 3001;
   await app.listen(port);

@@ -14,14 +14,14 @@ export class TeamsService {
         leaderId,
         members: { create: { userId: leaderId, role: 'LEADER' } },
       },
-      include: { members: { include: { user: true } } },
+      include: { members: { include: { user: { omit: { password: true } } } } },
     });
   }
 
   async findById(id: string) {
     const team = await this.prisma.team.findUnique({
       where: { id },
-      include: { members: { include: { user: true } } },
+      include: { members: { include: { user: { omit: { password: true } } } } },
     });
     if (!team) throw new NotFoundException('팀을 찾을 수 없습니다');
     return team;
@@ -30,7 +30,7 @@ export class TeamsService {
   async getMyTeams(userId: string) {
     return this.prisma.team.findMany({
       where: { members: { some: { userId } } },
-      include: { members: { include: { user: true } } },
+      include: { members: { include: { user: { omit: { password: true } } } } },
     });
   }
 
@@ -40,7 +40,7 @@ export class TeamsService {
     return this.prisma.team.update({
       where: { id },
       data: dto,
-      include: { members: { include: { user: true } } },
+      include: { members: { include: { user: { omit: { password: true } } } } },
     });
   }
 

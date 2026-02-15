@@ -1,5 +1,7 @@
 import { IsString, IsOptional, IsInt, IsDateString, Min } from 'class-validator';
 
+export * from './dinner-query.dto.js';
+
 export class CreateDinnerDto {
   @IsDateString()
   date!: string;
