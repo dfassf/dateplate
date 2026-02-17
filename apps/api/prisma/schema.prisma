@@ -14,6 +14,9 @@ model User {
   email     String   @unique
   password  String
   name      String
+  companyAddress   String?
+  companyLatitude  Float?
+  companyLongitude Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -21,6 +24,7 @@ model User {
   sentInvites   TeamInvite[]   @relation("InviteSender")
   reviews       Review[]
   dinnerRecords DinnerRecord[]
+  sessions      Session[]      @relation("SessionCreator")
 }
 
 // ==================== Team ====================
@@ -37,6 +41,7 @@ model Team {
   invites      TeamInvite[]
   dinnerRecords DinnerRecord[]
   reviews      Review[]
+  sessions     Session[]
 }
 
 model TeamMember {
@@ -80,6 +85,7 @@ model Restaurant {
 
   dinnerRecords DinnerRecord[]
   reviews       Review[]
+  sessionOptions SessionOption[]
 }
 
 // ==================== Dinner Record ====================
@@ -99,7 +105,7 @@ model DinnerRecord {
   team         Team       @relation(fields: [teamId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   creator      User       @relation(fields: [createdBy], references: [id])
-  review       Review?
+  reviews      Review[]
 }
 
 // ==================== Review ====================
@@ -115,7 +121,7 @@ model Review {
 
   teamId       String
   restaurantId String
-  dinnerRecordId String @unique
+  dinnerRecordId String
   authorId     String
   team         Team         @relation(fields: [teamId], references: [id])
   restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
@@ -123,6 +129,8 @@ model Review {
   author       User         @relation(fields: [authorId], references: [id])
   images       ReviewImage[]
   tags         ReviewTag[]
+
+  @@unique([dinnerRecordId, authorId])
 }
 
 model ReviewImage {
@@ -140,4 +148,97 @@ model ReviewTag {
   name String @unique
 
   reviews Review[]
+}
+
+// ==================== Session (Tournament / Roulette) ====================
+
+model Session {
+  id        String   @id @default(cuid())
+  type      String   // TOURNAMENT | ROULETTE
+  status    String   @default("ACTIVE") // ACTIVE | COMPLETED
+  title     String?
+  result    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teamId    String
+  creatorId String
+  team      Team    @relation(fields: [teamId], references: [id])
+  creator   User    @relation("SessionCreator", fields: [creatorId], references: [id])
+
+  options SessionOption[]
+  votes   SessionVote[]
+}
+
+model SessionOption {
+  id           String  @id @default(cuid())
+  name         String
+  weight       Int     @default(1)
+
+  sessionId    String
+  restaurantId String?
+  session      Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  votes SessionVote[]
+}
+
+model SessionVote {
+  id        String   @id @default(cuid())
+  round     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  sessionId String
+  optionId  String
+  voterId   String
+  session   Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  option    SessionOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+}
+
+// ==================== Gamification ====================
+
+model Ticket {
+  id        String   @id @default(cuid())
+  type      String   // GOLDEN | BLACK
+  month     Int
+  year      Int
+  createdAt DateTime @default(now())
+
+  teamId    String
+  fromUserId String
+  toUserId   String
+
+  @@unique([teamId, fromUserId, toUserId, month, year])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   // e.g., FIRST_REVIEW, DINNER_10, STREAK_3
+  unlockedAt  DateTime @default(now())
+
+  userId String
+
+  @@unique([userId, code])
+}
+
+model Mission {
+  id          String @id @default(cuid())
+  code        String @unique
+  title       String
+  description String
+  targetCount Int
+  reward      String // e.g., BADGE, POINT
+  isActive    Boolean @default(true)
+}
+
+model MissionProgress {
+  id           String @id @default(cuid())
+  currentCount Int    @default(0)
+  completed    Boolean @default(false)
+  completedAt  DateTime?
+
+  userId    String
+  missionId String
+
+  @@unique([userId, missionId])
 }

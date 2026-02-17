@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { teamApi } from '../lib/api';
+import { getErrorMessage } from '../lib/error';
 
 export default function TeamJoin() {
   const navigate = useNavigate();
@@ -8,15 +9,16 @@ export default function TeamJoin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      const res = await teamApi.acceptInvite(code);
-      navigate(`/teams/${res.data.data.id}`);
-    } catch {
-      setError('초대 코드가 유효하지 않거나 만료되었습니다.');
+      const team = await teamApi.acceptInvite(code);
+      navigate(`/teams/${team.id}`);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, '초대 코드가 유효하지 않거나 만료되었습니다.'));
     } finally {
       setLoading(false);
     }
@@ -32,7 +34,7 @@ export default function TeamJoin() {
             type="text"
             placeholder="팀장에게 받은 초대 코드를 입력하세요"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(event) => setCode(event.target.value)}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[#3182f6] text-sm"
           />

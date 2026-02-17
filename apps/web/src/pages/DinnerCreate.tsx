@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { dinnerApi } from '../lib/api';
 import RestaurantSearch from '../components/RestaurantSearch';
+import { useAuthStore } from '../stores/authStore';
 import type { Restaurant } from '@hoesikplate/shared';
 
 export default function DinnerCreate() {
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [memo, setMemo] = useState('');
@@ -94,7 +96,8 @@ export default function DinnerCreate() {
           ) : (
             <RestaurantSearch
               onSelect={handleRestaurantSelect}
-              showCreateButton={true}
+              companyLatitude={user?.companyLatitude}
+              companyLongitude={user?.companyLongitude}
             />
           )}
         </div>

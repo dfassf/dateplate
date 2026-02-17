@@ -7,6 +7,9 @@ import { TeamsModule } from './teams/teams.module.js';
 import { DinnersModule } from './dinners/dinners.module.js';
 import { RestaurantsModule } from './restaurants/restaurants.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { SessionsModule } from './sessions/sessions.module.js';
+import { GamificationModule } from './gamification/gamification.module.js';
+import { StatsModule } from './stats/stats.module.js';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { ReviewsModule } from './reviews/reviews.module.js';
     DinnersModule,
     RestaurantsModule,
     ReviewsModule,
+    SessionsModule,
+    GamificationModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

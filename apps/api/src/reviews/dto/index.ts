@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, Max, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, IsIn, IsArray } from 'class-validator';
 
 export * from './review-query.dto.js';
 
@@ -24,6 +24,11 @@ export class CreateReviewDto {
   @IsIn(['PRIVATE', 'COMMUNITY', 'PUBLIC'])
   @IsOptional()
   visibility?: 'PRIVATE' | 'COMMUNITY' | 'PUBLIC';
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagNames?: string[];
 }
 
 export class UpdateReviewDto {
@@ -40,4 +45,9 @@ export class UpdateReviewDto {
   @IsIn(['PRIVATE', 'COMMUNITY', 'PUBLIC'])
   @IsOptional()
   visibility?: 'PRIVATE' | 'COMMUNITY' | 'PUBLIC';
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tagNames?: string[];
 }

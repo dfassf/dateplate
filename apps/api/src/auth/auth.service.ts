@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { User } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -9,6 +10,11 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  async checkEmail(email: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    return { available: !existing };
+  }
 
   async register(email: string, password: string, name: string) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -21,11 +27,7 @@ export class AuthService {
       data: { email, password: hashedPassword, name },
     });
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email });
-    return {
-      accessToken: token,
-      user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
-    };
+    return this.toAuthResponse(user);
   }
 
   async login(email: string, password: string) {
@@ -39,10 +41,23 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 틀렸습니다');
     }
 
+    return this.toAuthResponse(user);
+  }
+
+  private toAuthResponse(user: User) {
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
+
     return {
       accessToken: token,
-      user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        companyAddress: user.companyAddress,
+        companyLatitude: user.companyLatitude,
+        companyLongitude: user.companyLongitude,
+        createdAt: user.createdAt,
+      },
     };
   }
 }

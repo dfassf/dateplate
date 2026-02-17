@@ -23,6 +23,12 @@ export default function Layout() {
                 <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
                   대시보드
                 </Link>
+                <Link to="/community" className="text-gray-600 hover:text-gray-900">
+                  커뮤니티
+                </Link>
+                <Link to="/rankings" className="text-gray-600 hover:text-gray-900">
+                  랭킹
+                </Link>
                 <span className="text-gray-400">{user?.name}</span>
                 <button onClick={handleLogout} className="text-gray-500 hover:text-gray-700">
                   로그아웃

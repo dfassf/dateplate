@@ -1,26 +1,28 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../lib/api';
+import { getErrorMessage } from '../lib/error';
 import { useAuthStore } from '../stores/authStore';
 
 export default function Login() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      const res = await authApi.login({ email, password });
-      setAuth(res.data.data.user, res.data.data.accessToken);
+      const loginResult = await authApi.login({ email, password });
+      setAuth(loginResult.user, loginResult.accessToken);
       navigate('/dashboard');
-    } catch {
-      setError('이메일 또는 비밀번호가 틀렸습니다');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, '이메일 또는 비밀번호가 틀렸습니다'));
     } finally {
       setLoading(false);
     }
@@ -37,7 +39,7 @@ export default function Login() {
             type="email"
             placeholder="이메일"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[#3182f6] text-sm"
           />
@@ -45,7 +47,7 @@ export default function Login() {
             type="password"
             placeholder="비밀번호"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[#3182f6] text-sm"
           />

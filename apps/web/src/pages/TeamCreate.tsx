@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { teamApi } from '../lib/api';
+import { getErrorMessage } from '../lib/error';
 
 export default function TeamCreate() {
   const navigate = useNavigate();
@@ -8,15 +9,16 @@ export default function TeamCreate() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      const res = await teamApi.create({ name });
-      navigate(`/teams/${res.data.data.id}`);
-    } catch {
-      setError('팀 생성에 실패했습니다.');
+      const team = await teamApi.create({ name });
+      navigate(`/teams/${team.id}`);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, '팀 생성에 실패했습니다.'));
     } finally {
       setLoading(false);
     }
@@ -32,7 +34,7 @@ export default function TeamCreate() {
             type="text"
             placeholder="예: LG전자 마곡 개발팀"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(event) => setName(event.target.value)}
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[#3182f6] text-sm"
           />

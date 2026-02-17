@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { TeamsService } from './teams.service.js';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
-import { CreateTeamDto, UpdateTeamDto, AcceptInviteDto } from './dto/index.js';
+import type { CurrentUserPayload } from '../common/types/current-user.type.js';
+import { AcceptInviteDto, CreateTeamDto, UpdateTeamDto } from './dto/index.js';
+import { TeamsService } from './teams.service.js';
 
 @Controller('teams')
 @UseGuards(JwtAuthGuard)
@@ -10,12 +11,12 @@ export class TeamsController {
   constructor(private teamsService: TeamsService) {}
 
   @Post()
-  create(@CurrentUser() user: any, @Body() dto: CreateTeamDto) {
+  create(@CurrentUser() user: CurrentUserPayload, @Body() dto: CreateTeamDto) {
     return this.teamsService.create(user.id, dto.name);
   }
 
   @Get()
-  getMyTeams(@CurrentUser() user: any) {
+  getMyTeams(@CurrentUser() user: CurrentUserPayload) {
     return this.teamsService.getMyTeams(user.id);
   }
 
@@ -25,12 +26,16 @@ export class TeamsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: UpdateTeamDto) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: UpdateTeamDto,
+  ) {
     return this.teamsService.update(id, user.id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: any) {
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.teamsService.remove(id, user.id);
   }
 
@@ -38,18 +43,18 @@ export class TeamsController {
   removeMember(
     @Param('id') id: string,
     @Param('memberId') memberId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.teamsService.removeMember(id, memberId, user.id);
   }
 
   @Post(':id/invite')
-  createInvite(@Param('id') id: string, @CurrentUser() user: any) {
+  createInvite(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.teamsService.createInvite(id, user.id);
   }
 
   @Post('join')
-  acceptInvite(@CurrentUser() user: any, @Body() dto: AcceptInviteDto) {
+  acceptInvite(@CurrentUser() user: CurrentUserPayload, @Body() dto: AcceptInviteDto) {
     return this.teamsService.acceptInvite(user.id, dto.inviteCode);
   }
 }

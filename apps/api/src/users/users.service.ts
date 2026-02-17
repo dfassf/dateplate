@@ -12,7 +12,15 @@ export class UsersService {
     });
   }
 
-  async updateProfile(id: string, data: { name?: string }) {
+  async updateProfile(
+    id: string,
+    data: {
+      name?: string;
+      companyAddress?: string;
+      companyLatitude?: number;
+      companyLongitude?: number;
+    },
+  ) {
     return this.prisma.user.update({
       where: { id },
       data,

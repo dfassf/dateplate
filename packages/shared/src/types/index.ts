@@ -22,6 +22,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  companyAddress: string | null;
+  companyLatitude: number | null;
+  companyLongitude: number | null;
   createdAt: string;
 }
 
@@ -79,7 +82,10 @@ export interface DinnerRecord {
   headcount: number | null;
   teamId: string;
   restaurantId: string;
+  createdBy: string;
   restaurant?: Restaurant;
+  creator?: User;
+  reviews?: Review[];
   createdAt: string;
 }
 
@@ -97,6 +103,8 @@ export interface Review {
   authorId: string;
   images?: ReviewImage[];
   tags?: ReviewTag[];
+  restaurant?: Restaurant;
+  author?: User;
   createdAt: string;
 }
 
@@ -113,6 +121,85 @@ export type ReviewImageType = 'RECEIPT' | 'PHOTO';
 export interface ReviewTag {
   id: string;
   name: string;
+}
+
+// ==================== Session (Tournament / Roulette) ====================
+
+export interface Session {
+  id: string;
+  type: SessionType;
+  status: 'ACTIVE' | 'COMPLETED';
+  title: string | null;
+  result: string | null;
+  teamId: string;
+  creatorId: string;
+  creator?: Pick<User, 'id' | 'name'>;
+  options?: SessionOption[];
+  createdAt: string;
+}
+
+export type SessionType = 'TOURNAMENT' | 'ROULETTE';
+
+export interface SessionOption {
+  id: string;
+  name: string;
+  weight: number;
+  sessionId: string;
+  restaurantId: string | null;
+  restaurant?: Restaurant;
+}
+
+export interface SessionVote {
+  id: string;
+  round: number;
+  sessionId: string;
+  optionId: string;
+  voterId: string;
+}
+
+// ==================== Gamification ====================
+
+export interface Ticket {
+  id: string;
+  type: 'GOLDEN' | 'BLACK';
+  teamId: string;
+  fromUserId: string;
+  toUserId: string;
+  month: number;
+  year: number;
+  createdAt: string;
+}
+
+export interface TicketResult {
+  golden: number;
+  black: number;
+}
+
+export interface TicketResultsResponse {
+  month: number;
+  year: number;
+  results: Record<string, TicketResult>;
+}
+
+export interface Achievement {
+  code: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface Mission {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  targetCount: number;
+  reward: string;
+  isActive: boolean;
+  currentCount: number;
+  completed: boolean;
+  completedAt: string | null;
 }
 
 // ==================== API ====================
