@@ -23,6 +23,12 @@ describe('StarRatingDisplay', () => {
 });
 
 describe('StarRatingInput', () => {
+  it('renders five clickable stars', () => {
+    render(<StarRatingInput value={2} onChange={vi.fn()} />);
+
+    expect(screen.getAllByRole('button')).toHaveLength(5);
+  });
+
   it('calls onChange with clicked star value', () => {
     const onChange = vi.fn();
     render(<StarRatingInput value={2} onChange={onChange} />);

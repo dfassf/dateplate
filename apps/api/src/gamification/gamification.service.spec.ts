@@ -36,72 +36,115 @@ describe('GamificationService', () => {
     service = new GamificationService(prismaMock as unknown as PrismaService);
   });
 
-  it('giveTicket should map unique constraint errors to ConflictException', async () => {
-    prismaMock.ticket.create.mockRejectedValue({ code: 'P2002' });
+  describe('giveTicket', () => {
+    it('maps unique constraint errors to ConflictException', async () => {
+      prismaMock.ticket.create.mockRejectedValue({ code: 'P2002' });
 
-    await expect(
-      service.giveTicket('from-user', {
-        teamId: 'team-1',
-        toUserId: 'to-user',
-        type: 'GOLDEN',
-      }),
-    ).rejects.toBeInstanceOf(ConflictException);
+      await expect(
+        service.giveTicket('from-user', {
+          teamId: 'team-1',
+          toUserId: 'to-user',
+          type: 'GOLDEN',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rethrows unknown errors', async () => {
+      const dbError = new Error('database unavailable');
+      prismaMock.ticket.create.mockRejectedValue(dbError);
+
+      await expect(
+        service.giveTicket('from-user', {
+          teamId: 'team-1',
+          toUserId: 'to-user',
+          type: 'BLACK',
+        }),
+      ).rejects.toBe(dbError);
+    });
   });
 
-  it('giveTicket should rethrow unknown errors', async () => {
-    const dbError = new Error('database unavailable');
-    prismaMock.ticket.create.mockRejectedValue(dbError);
+  describe('getTicketResults', () => {
+    it('aggregates ticket counts by receiver and ticket type', async () => {
+      prismaMock.ticket.findMany.mockResolvedValue([
+        { toUserId: 'u1', type: 'GOLDEN' },
+        { toUserId: 'u1', type: 'BLACK' },
+        { toUserId: 'u2', type: 'GOLDEN' },
+      ]);
 
-    await expect(
-      service.giveTicket('from-user', {
-        teamId: 'team-1',
-        toUserId: 'to-user',
-        type: 'BLACK',
-      }),
-    ).rejects.toBe(dbError);
+      const result = await service.getTicketResults('team-1', 1, 2026);
+
+      expect(prismaMock.ticket.findMany).toHaveBeenCalledWith({
+        where: { teamId: 'team-1', month: 1, year: 2026 },
+      });
+      expect(result).toEqual({
+        month: 1,
+        year: 2026,
+        results: {
+          u1: { golden: 1, black: 1 },
+          u2: { golden: 1, black: 0 },
+        },
+      });
+    });
   });
 
-  it('checkAndUnlockAchievements should upsert unlockable achievements in one transaction', async () => {
-    prismaMock.review.count.mockResolvedValue(5);
-    prismaMock.dinnerRecord.count.mockResolvedValue(10);
-    prismaMock.review.findMany.mockResolvedValue([
-      { restaurantId: 'r1' },
-      { restaurantId: 'r2' },
-      { restaurantId: 'r3' },
-      { restaurantId: 'r4' },
-      { restaurantId: 'r5' },
-    ]);
-    prismaMock.ticket.count.mockResolvedValue(1);
-    prismaMock.achievement.upsert.mockResolvedValue({});
-    prismaMock.$transaction.mockResolvedValue(undefined);
-    prismaMock.achievement.findMany.mockResolvedValue([]);
+  describe('checkAndUnlockAchievements', () => {
+    it('upserts unlockable achievements in one transaction', async () => {
+      prismaMock.review.count.mockResolvedValue(5);
+      prismaMock.dinnerRecord.count.mockResolvedValue(10);
+      prismaMock.review.findMany.mockResolvedValue([
+        { restaurantId: 'r1' },
+        { restaurantId: 'r2' },
+        { restaurantId: 'r3' },
+        { restaurantId: 'r4' },
+        { restaurantId: 'r5' },
+      ]);
+      prismaMock.ticket.count.mockResolvedValue(1);
+      prismaMock.achievement.upsert.mockResolvedValue({});
+      prismaMock.$transaction.mockResolvedValue(undefined);
+      prismaMock.achievement.findMany.mockResolvedValue([]);
 
-    await service.checkAndUnlockAchievements('user-1');
+      await service.checkAndUnlockAchievements('user-1');
 
-    expect(prismaMock.achievement.upsert).toHaveBeenCalledTimes(6);
-    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+      expect(prismaMock.achievement.upsert).toHaveBeenCalledTimes(6);
+      expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips transaction when no achievements should be unlocked', async () => {
+      prismaMock.review.count.mockResolvedValue(0);
+      prismaMock.dinnerRecord.count.mockResolvedValue(0);
+      prismaMock.review.findMany.mockResolvedValue([]);
+      prismaMock.ticket.count.mockResolvedValue(0);
+      prismaMock.achievement.findMany.mockResolvedValue([]);
+
+      await service.checkAndUnlockAchievements('user-1');
+
+      expect(prismaMock.achievement.upsert).not.toHaveBeenCalled();
+      expect(prismaMock.$transaction).not.toHaveBeenCalled();
+    });
   });
 
-  it('getAchievements should return unlocked flags by code', async () => {
-    const unlockedAt = new Date('2026-01-01T00:00:00.000Z');
-    prismaMock.achievement.findMany.mockResolvedValue([{ code: 'FIRST_REVIEW', unlockedAt }]);
+  describe('getAchievements', () => {
+    it('returns unlocked flags by code', async () => {
+      const unlockedAt = new Date('2026-01-01T00:00:00.000Z');
+      prismaMock.achievement.findMany.mockResolvedValue([{ code: 'FIRST_REVIEW', unlockedAt }]);
 
-    const achievements = await service.getAchievements('user-1');
-    const firstReview = achievements.find((achievement) => achievement.code === 'FIRST_REVIEW');
-    const review10 = achievements.find((achievement) => achievement.code === 'REVIEW_10');
+      const achievements = await service.getAchievements('user-1');
+      const firstReview = achievements.find((achievement) => achievement.code === 'FIRST_REVIEW');
+      const review10 = achievements.find((achievement) => achievement.code === 'REVIEW_10');
 
-    expect(firstReview).toEqual(
-      expect.objectContaining({
-        code: 'FIRST_REVIEW',
-        unlocked: true,
-        unlockedAt,
-      }),
-    );
-    expect(review10).toEqual(
-      expect.objectContaining({
-        code: 'REVIEW_10',
-        unlocked: false,
-      }),
-    );
+      expect(firstReview).toEqual(
+        expect.objectContaining({
+          code: 'FIRST_REVIEW',
+          unlocked: true,
+          unlockedAt,
+        }),
+      );
+      expect(review10).toEqual(
+        expect.objectContaining({
+          code: 'REVIEW_10',
+          unlocked: false,
+        }),
+      );
+    });
   });
 });

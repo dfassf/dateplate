@@ -31,4 +31,13 @@ describe('getErrorMessage', () => {
   it('returns fallback for unknown error values', () => {
     expect(getErrorMessage(null, '알 수 없는 오류')).toBe('알 수 없는 오류');
   });
+
+  it('returns fallback when axios message is empty array', () => {
+    const error = {
+      isAxiosError: true,
+      response: { data: { message: [] } },
+    };
+
+    expect(getErrorMessage(error, '알 수 없는 오류')).toBe('알 수 없는 오류');
+  });
 });

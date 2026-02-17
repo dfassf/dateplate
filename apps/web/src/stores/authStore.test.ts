@@ -50,6 +50,14 @@ describe('useAuthStore', () => {
     useAuthStore.setState({ user: null, token: null });
   });
 
+  it('hydrates token from localStorage on store initialization', async () => {
+    localStorage.setItem('token', 'persisted-token');
+    vi.resetModules();
+    ({ useAuthStore } = await import('./authStore'));
+
+    expect(useAuthStore.getState().token).toBe('persisted-token');
+  });
+
   it('setAuth should update store and persist token to localStorage', () => {
     useAuthStore.getState().setAuth(mockUser, 'token-123');
     const state = useAuthStore.getState();
