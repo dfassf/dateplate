@@ -123,6 +123,12 @@ VITE_KAKAO_MAP_KEY=your-kakao-javascript-key
 - 인증 방식: `Authorization: Bearer <JWT>`
 - 현재 Swagger UI는 별도 제공하지 않으며, 주요 엔드포인트는 아래 표 기준으로 사용합니다.
 
+### 전역 요청/예외 처리
+
+- `apps/api/src/main.ts`에서 전역 `ValidationPipe`, `ResponseInterceptor`, `GlobalExceptionFilter`를 등록합니다.
+- `apps/api/src/common/filters/global-exception.filter.ts`는 `HttpException`(비즈니스/검증 예외)과 Prisma 에러(`P2002`, `P2025`)를 공통 응답 포맷으로 변환합니다.
+- 에러 응답은 `message`를 항상 포함하므로 프론트에서 일관된 방식으로 사용자 메시지를 처리할 수 있습니다.
+
 ### 주요 엔드포인트
 
 | 메서드 | 경로 | 인증 | 설명 |
@@ -196,6 +202,34 @@ pnpm build        # 전체 빌드
 pnpm lint         # 린트
 pnpm format       # Prettier 포맷팅
 pnpm clean        # node_modules 정리
+```
+
+## 테스트 코드 샘플
+
+### Backend (NestJS)
+
+- 단위 테스트
+  - `apps/api/src/teams/teams.service.spec.ts`
+  - `apps/api/src/reviews/reviews.service.spec.ts`
+  - `apps/api/src/gamification/gamification.service.spec.ts`
+  - `apps/api/src/common/filters/global-exception.filter.spec.ts`
+- 통합(E2E) 테스트
+  - `apps/api/test/controllers.e2e-spec.ts`
+
+```bash
+pnpm --filter @hoesikplate/api test
+pnpm --filter @hoesikplate/api test:e2e
+```
+
+### Frontend (React + Vitest)
+
+- 컴포넌트/유틸/스토어 테스트
+  - `apps/web/src/components/StarRating.test.tsx`
+  - `apps/web/src/lib/error.test.ts`
+  - `apps/web/src/stores/authStore.test.ts`
+
+```bash
+pnpm --filter @hoesikplate/web test
 ```
 
 ## 구현 현황

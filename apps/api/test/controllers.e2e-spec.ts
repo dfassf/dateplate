@@ -5,6 +5,7 @@ import request from 'supertest';
 import { AuthController } from '../src/auth/auth.controller.js';
 import { AuthService } from '../src/auth/auth.service.js';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard.js';
+import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter.js';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor.js';
 import { TeamsController } from '../src/teams/teams.controller.js';
 import { TeamsService } from '../src/teams/teams.service.js';
@@ -63,6 +64,7 @@ describe('Controllers (e2e)', () => {
       }),
     );
     app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
     await app.init();
   });
@@ -105,7 +107,13 @@ describe('Controllers (e2e)', () => {
     await request(app.getHttpServer())
       .post('/auth/register')
       .send({ email: 'not-an-email', password: '123456', name: 'User One' })
-      .expect(400);
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.data).toBeNull();
+        expect(body.statusCode).toBe(400);
+        expect(body.path).toBe('/auth/register');
+        expect(typeof body.message).toBe('string');
+      });
 
     expect(authServiceMock.register).not.toHaveBeenCalled();
   });

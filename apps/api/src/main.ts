@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor.js';
 
 async function bootstrap() {
@@ -15,6 +16,7 @@ async function bootstrap() {
   );
 
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.enableCors();
 
