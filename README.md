@@ -117,19 +117,57 @@ VITE_API_BASE_URL=http://localhost:3001
 VITE_KAKAO_MAP_KEY=your-kakao-javascript-key
 ```
 
-## API 엔드포인트
+## API 문서
 
-| 모듈 | 주요 엔드포인트 |
-|---|---|
-| 인증 | `POST /auth/register`, `POST /auth/login`, `GET /auth/check-email` |
-| 사용자 | `GET /users/me`, `PATCH /users/me` |
-| 팀 | CRUD + `POST /:id/invite`, `POST /join` |
-| 회식 | CRUD + `GET ?teamId=`, `GET /dinners/recent` |
-| 식당 | `GET /restaurants/team/:teamId`, `GET /restaurants/rankings` |
-| 리뷰 | CRUD + `GET /reviews/community` |
-| 세션 | `POST /sessions`, `POST /:id/vote`, `POST /:id/spin`, `POST /:id/complete` |
-| 게이미피케이션 | `POST /gamification/tickets`, `GET /gamification/achievements`, `POST /gamification/achievements/check` |
-| 통계 | `GET /stats/:teamId` |
+- Base URL: `http://localhost:3001`
+- 인증 방식: `Authorization: Bearer <JWT>`
+- 현재 Swagger UI는 별도 제공하지 않으며, 주요 엔드포인트는 아래 표 기준으로 사용합니다.
+
+### 주요 엔드포인트
+
+| 메서드 | 경로 | 인증 | 설명 |
+|---|---|---|---|
+| `GET` | `/auth/check-email?email=` | 불필요 | 이메일 중복 확인 |
+| `POST` | `/auth/register` | 불필요 | 회원가입 |
+| `POST` | `/auth/login` | 불필요 | 로그인 및 JWT 발급 |
+| `GET` | `/users/me` | 필요 | 내 프로필 조회 |
+| `PATCH` | `/users/me` | 필요 | 내 프로필 수정 |
+| `GET` | `/teams` | 필요 | 내 팀 목록 조회 |
+| `POST` | `/teams` | 필요 | 팀 생성 |
+| `GET` | `/teams/:id` | 필요 | 팀 상세 조회 |
+| `PATCH` | `/teams/:id` | 필요 | 팀 정보 수정 (팀장) |
+| `DELETE` | `/teams/:id` | 필요 | 팀 삭제 (팀장) |
+| `DELETE` | `/teams/:id/members/:memberId` | 필요 | 팀원 제거/자진 탈퇴 |
+| `POST` | `/teams/:id/invite` | 필요 | 팀 초대 코드 생성 |
+| `POST` | `/teams/join` | 필요 | 초대 코드로 팀 합류 |
+| `GET` | `/dinners?teamId=&page=&limit=` | 필요 | 팀 회식 기록 목록 |
+| `POST` | `/dinners` | 필요 | 회식 기록 생성 |
+| `GET` | `/dinners/recent` | 필요 | 내 최근 회식 및 이번달 횟수 |
+| `GET` | `/dinners/:id` | 필요 | 회식 상세 조회 |
+| `PATCH` | `/dinners/:id` | 필요 | 회식 기록 수정 (작성자) |
+| `DELETE` | `/dinners/:id` | 필요 | 회식 기록 삭제 (작성자) |
+| `GET` | `/restaurants?search=` | 필요 | 식당 검색 |
+| `POST` | `/restaurants` | 필요 | 식당 등록/재사용 |
+| `GET` | `/restaurants/team/:teamId?sort=` | 필요 | 팀 식당 목록/정렬 |
+| `GET` | `/restaurants/rankings?sort=&category=` | 필요 | 공개 리뷰 기반 랭킹 |
+| `GET` | `/reviews?teamId=&page=&limit=` | 필요 | 팀 리뷰 목록 |
+| `POST` | `/reviews` | 필요 | 리뷰 작성 |
+| `GET` | `/reviews/community?tag=&page=&limit=` | 필요 | 커뮤니티 리뷰 피드 |
+| `GET` | `/reviews/:id` | 필요 | 리뷰 상세 조회 |
+| `PATCH` | `/reviews/:id` | 필요 | 리뷰 수정 (작성자) |
+| `DELETE` | `/reviews/:id` | 필요 | 리뷰 삭제 (작성자) |
+| `GET` | `/sessions?teamId=&status=` | 필요 | 세션 목록 조회 |
+| `POST` | `/sessions` | 필요 | 월드컵/룰렛 세션 생성 |
+| `GET` | `/sessions/:id` | 필요 | 세션 상세 조회 |
+| `POST` | `/sessions/:id/vote` | 필요 | 월드컵 라운드 투표 |
+| `POST` | `/sessions/:id/spin` | 필요 | 룰렛 스핀 실행 |
+| `POST` | `/sessions/:id/complete` | 필요 | 세션 수동 완료 |
+| `POST` | `/gamification/tickets` | 필요 | 티켓 부여 |
+| `GET` | `/gamification/tickets/:teamId?month=&year=` | 필요 | 월별 티켓 결과 |
+| `GET` | `/gamification/achievements` | 필요 | 내 업적 조회 |
+| `POST` | `/gamification/achievements/check` | 필요 | 업적 해금 체크 |
+| `GET` | `/gamification/missions` | 필요 | 활성 미션/진행도 조회 |
+| `GET` | `/stats/:teamId` | 필요 | 팀 통계 조회 |
 
 ## 페이지 구성
 

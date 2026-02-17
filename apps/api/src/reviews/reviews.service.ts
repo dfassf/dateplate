@@ -9,9 +9,27 @@ import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateReviewDto, UpdateReviewDto } from './dto/index.js';
 
+const COMMUNITY_VISIBILITIES = ['COMMUNITY', 'PUBLIC'];
+
 @Injectable()
 export class ReviewsService {
   constructor(private prisma: PrismaService) {}
+
+  private getPagination(page = 1, limit = 20) {
+    return { page, limit, skip: (page - 1) * limit };
+  }
+
+  private buildTagConnectOrCreate(tagNames?: string[]) {
+    const normalizedTagNames = Array.from(new Set((tagNames ?? []).map((name) => name.trim()))).filter(
+      (name) => name.length > 0,
+    );
+    if (normalizedTagNames.length === 0) return undefined;
+
+    return normalizedTagNames.map((name) => ({
+      where: { name },
+      create: { name },
+    }));
+  }
 
   async create(dto: CreateReviewDto, authorId: string) {
     const existing = await this.prisma.review.findFirst({
@@ -23,17 +41,15 @@ export class ReviewsService {
     }
 
     const { tagNames, ...rest } = dto;
+    const tagConnectOrCreate = this.buildTagConnectOrCreate(tagNames);
 
     return this.prisma.review.create({
       data: {
         ...rest,
         authorId,
-        tags: tagNames?.length
+        tags: tagConnectOrCreate
           ? {
-              connectOrCreate: tagNames.map((name) => ({
-                where: { name },
-                create: { name },
-              })),
+              connectOrCreate: tagConnectOrCreate,
             }
           : undefined,
       },
@@ -43,13 +59,14 @@ export class ReviewsService {
 
   async findByTeam(teamId: string, pagination: PaginationDto) {
     const { page = 1, limit = 20, order = 'desc' } = pagination;
+    const { skip } = this.getPagination(page, limit);
 
     const [data, total] = await Promise.all([
       this.prisma.review.findMany({
         where: { teamId },
         include: { restaurant: true, author: true, tags: true },
         orderBy: { createdAt: order },
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
       }),
       this.prisma.review.count({ where: { teamId } }),
@@ -78,18 +95,16 @@ export class ReviewsService {
     }
 
     const { tagNames, ...rest } = dto;
+    const tagConnectOrCreate = this.buildTagConnectOrCreate(tagNames);
 
     return this.prisma.review.update({
       where: { id },
       data: {
         ...rest,
-        tags: tagNames
+        tags: tagConnectOrCreate
           ? {
               set: [],
-              connectOrCreate: tagNames.map((name) => ({
-                where: { name },
-                create: { name },
-              })),
+              connectOrCreate: tagConnectOrCreate,
             }
           : undefined,
       },
@@ -98,7 +113,8 @@ export class ReviewsService {
   }
 
   async findCommunity(tag?: string, page = 1, limit = 20) {
-    const where: Prisma.ReviewWhereInput = { visibility: { in: ['COMMUNITY', 'PUBLIC'] } };
+    const { skip } = this.getPagination(page, limit);
+    const where: Prisma.ReviewWhereInput = { visibility: { in: COMMUNITY_VISIBILITIES } };
     if (tag) {
       where.tags = { some: { name: tag } };
     }
@@ -108,7 +124,7 @@ export class ReviewsService {
         where,
         include: { restaurant: true, author: { omit: { password: true } }, tags: true },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
       }),
       this.prisma.review.count({ where }),

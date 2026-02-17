@@ -7,6 +7,16 @@ import { UpdateTeamDto } from './dto/index.js';
 export class TeamsService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly teamWithMembersInclude = {
+    members: { include: { user: { omit: { password: true } } } },
+  } as const;
+
+  private assertLeader(teamLeaderId: string, userId: string, message = '팀장만 수정할 수 있습니다') {
+    if (teamLeaderId !== userId) {
+      throw new ForbiddenException(message);
+    }
+  }
+
   async create(leaderId: string, name: string) {
     return this.prisma.team.create({
       data: {
@@ -14,14 +24,14 @@ export class TeamsService {
         leaderId,
         members: { create: { userId: leaderId, role: 'LEADER' } },
       },
-      include: { members: { include: { user: { omit: { password: true } } } } },
+      include: this.teamWithMembersInclude,
     });
   }
 
   async findById(id: string) {
     const team = await this.prisma.team.findUnique({
       where: { id },
-      include: { members: { include: { user: { omit: { password: true } } } } },
+      include: this.teamWithMembersInclude,
     });
     if (!team) throw new NotFoundException('팀을 찾을 수 없습니다');
     return team;
@@ -30,23 +40,23 @@ export class TeamsService {
   async getMyTeams(userId: string) {
     return this.prisma.team.findMany({
       where: { members: { some: { userId } } },
-      include: { members: { include: { user: { omit: { password: true } } } } },
+      include: this.teamWithMembersInclude,
     });
   }
 
   async update(id: string, userId: string, dto: UpdateTeamDto) {
     const team = await this.findById(id);
-    if (team.leaderId !== userId) throw new ForbiddenException('팀장만 수정할 수 있습니다');
+    this.assertLeader(team.leaderId, userId);
     return this.prisma.team.update({
       where: { id },
       data: dto,
-      include: { members: { include: { user: { omit: { password: true } } } } },
+      include: this.teamWithMembersInclude,
     });
   }
 
   async remove(id: string, userId: string) {
     const team = await this.findById(id);
-    if (team.leaderId !== userId) throw new ForbiddenException('팀장만 삭제할 수 있습니다');
+    this.assertLeader(team.leaderId, userId, '팀장만 삭제할 수 있습니다');
     await this.prisma.$transaction([
       this.prisma.teamInvite.deleteMany({ where: { teamId: id } }),
       this.prisma.teamMember.deleteMany({ where: { teamId: id } }),

@@ -16,11 +16,26 @@ const ACHIEVEMENT_DEFS = [
 export class GamificationService {
   constructor(private prisma: PrismaService) {}
 
+  private getCurrentPeriod(month?: number, year?: number) {
+    const now = new Date();
+    return {
+      month: month ?? now.getMonth() + 1,
+      year: year ?? now.getFullYear(),
+    };
+  }
+
+  private isUniqueConstraintError(error: unknown) {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2002'
+    );
+  }
+
   // 티켓
   async giveTicket(fromUserId: string, dto: GiveTicketDto) {
-    const now = new Date();
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
+    const { month, year } = this.getCurrentPeriod();
 
     try {
       return await this.prisma.ticket.create({
@@ -33,18 +48,19 @@ export class GamificationService {
           year,
         },
       });
-    } catch {
-      throw new ConflictException('이번 달에 이미 이 팀원에게 티켓을 줬습니다');
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new ConflictException('이번 달에 이미 이 팀원에게 티켓을 줬습니다');
+      }
+      throw error;
     }
   }
 
   async getTicketResults(teamId: string, month?: number, year?: number) {
-    const now = new Date();
-    const m = month ?? now.getMonth() + 1;
-    const y = year ?? now.getFullYear();
+    const period = this.getCurrentPeriod(month, year);
 
     const tickets = await this.prisma.ticket.findMany({
-      where: { teamId, month: m, year: y },
+      where: { teamId, month: period.month, year: period.year },
     });
 
     // 유저별 집계
@@ -55,17 +71,17 @@ export class GamificationService {
       else userStats[t.toUserId].black++;
     });
 
-    return { month: m, year: y, results: userStats };
+    return { month: period.month, year: period.year, results: userStats };
   }
 
   // 업적
   async getAchievements(userId: string) {
     const unlocked = await this.prisma.achievement.findMany({ where: { userId } });
-    const unlockedCodes = new Set(unlocked.map((a) => a.code));
+    const unlockedByCode = new Map(unlocked.map((a) => [a.code, a.unlockedAt]));
     return ACHIEVEMENT_DEFS.map((def) => ({
       ...def,
-      unlocked: unlockedCodes.has(def.code),
-      unlockedAt: unlocked.find((a) => a.code === def.code)?.unlockedAt,
+      unlocked: unlockedByCode.has(def.code),
+      unlockedAt: unlockedByCode.get(def.code),
     }));
   }
 
@@ -90,12 +106,16 @@ export class GamificationService {
     if (restaurantCount >= 5) toUnlock.push('RESTAURANT_5');
     if (goldenTicketCount >= 1) toUnlock.push('GOLDEN_TICKET');
 
-    for (const code of toUnlock) {
-      await this.prisma.achievement.upsert({
-        where: { userId_code: { userId, code } },
-        create: { userId, code },
-        update: {},
-      });
+    if (toUnlock.length > 0) {
+      await this.prisma.$transaction(
+        toUnlock.map((code) =>
+          this.prisma.achievement.upsert({
+            where: { userId_code: { userId, code } },
+            create: { userId, code },
+            update: {},
+          }),
+        ),
+      );
     }
 
     return this.getAchievements(userId);
