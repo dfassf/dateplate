@@ -1,74 +1,112 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { calcAvgRating } from '../common/utils/rating.js';
+
+type NumericLike = number | string | bigint | null | undefined;
+
+type MonthlySpendingRow = {
+  month: string;
+  amount: NumericLike;
+  count: NumericLike;
+};
+
+type CategoryDistributionRow = {
+  category: string | null;
+  count: NumericLike;
+};
 
 @Injectable()
 export class StatsService {
   constructor(private prisma: PrismaService) {}
 
+  private toNumber(value: NumericLike): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return Number(value);
+    if (typeof value === 'bigint') return Number(value);
+    return 0;
+  }
+
   async getTeamStats(teamId: string) {
-    const [dinners, reviews, members] = await Promise.all([
-      this.prisma.dinnerRecord.findMany({
-        where: { teamId },
-        include: { restaurant: true },
-        orderBy: { date: 'asc' },
-      }),
-      this.prisma.review.findMany({
-        where: { teamId },
-        include: { author: { omit: { password: true } }, restaurant: true },
-      }),
-      this.prisma.teamMember.findMany({
-        where: { teamId },
-        include: { user: { omit: { password: true } } },
-      }),
-    ]);
+    // Prisma aggregate/groupBy + raw SQL 집계를 이용해 대량 데이터 로딩을 피한다.
+    const [dinnerSummary, reviewSummary, members, reviewCountByAuthor, monthlyRows, categoryRows] =
+      await Promise.all([
+        this.prisma.dinnerRecord.aggregate({
+          where: { teamId },
+          _count: { _all: true },
+          _sum: { totalAmount: true, headcount: true },
+        }),
+        this.prisma.review.aggregate({
+          where: { teamId },
+          _count: { _all: true },
+          _avg: { rating: true },
+        }),
+        this.prisma.teamMember.findMany({
+          where: { teamId },
+          select: {
+            userId: true,
+            user: {
+              select: { name: true },
+            },
+          },
+        }),
+        this.prisma.review.groupBy({
+          by: ['authorId'],
+          where: { teamId },
+          _count: { authorId: true },
+        }),
+        this.prisma.$queryRaw<MonthlySpendingRow[]>`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', "date"), 'YYYY-MM') AS "month",
+            COALESCE(SUM("totalAmount"), 0)::bigint AS "amount",
+            COUNT(*)::bigint AS "count"
+          FROM "DinnerRecord"
+          WHERE "teamId" = ${teamId}
+          GROUP BY DATE_TRUNC('month', "date")
+          ORDER BY DATE_TRUNC('month', "date") ASC
+        `,
+        this.prisma.$queryRaw<CategoryDistributionRow[]>`
+          SELECT
+            COALESCE(r."category", '기타') AS "category",
+            COUNT(*)::bigint AS "count"
+          FROM "DinnerRecord" d
+          LEFT JOIN "Restaurant" r ON r."id" = d."restaurantId"
+          WHERE d."teamId" = ${teamId}
+          GROUP BY COALESCE(r."category", '기타')
+          ORDER BY COUNT(*) DESC
+        `,
+      ]);
 
-    // 월별 지출
-    const monthlySpending: Record<string, number> = {};
-    const monthlyCount: Record<string, number> = {};
-    dinners.forEach((d) => {
-      const date = new Date(d.date);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      monthlySpending[key] = (monthlySpending[key] || 0) + (d.totalAmount || 0);
-      monthlyCount[key] = (monthlyCount[key] || 0) + 1;
-    });
-
-    // 카테고리 분포
-    const categoryCount: Record<string, number> = {};
-    dinners.forEach((d) => {
-      const cat = d.restaurant?.category || '기타';
-      categoryCount[cat] = (categoryCount[cat] || 0) + 1;
-    });
-
-    // 멤버별 리뷰 수
     const memberReviewCount: Record<string, { name: string; count: number }> = {};
-    members.forEach((m) => {
-      memberReviewCount[m.userId] = { name: m.user.name, count: 0 };
+    members.forEach((member) => {
+      memberReviewCount[member.userId] = { name: member.user.name, count: 0 };
     });
-    reviews.forEach((r) => {
-      if (memberReviewCount[r.authorId]) {
-        memberReviewCount[r.authorId].count++;
+    reviewCountByAuthor.forEach((row) => {
+      if (memberReviewCount[row.authorId]) {
+        memberReviewCount[row.authorId].count = row._count.authorId;
       }
     });
 
-    // 인당 평균
-    const totalAmount = dinners.reduce((s, d) => s + (d.totalAmount || 0), 0);
-    const totalHeadcount = dinners.reduce((s, d) => s + (d.headcount || 0), 0);
+    const totalDinners = dinnerSummary._count._all;
+    const totalAmount = this.toNumber(dinnerSummary._sum.totalAmount);
+    const totalHeadcount = this.toNumber(dinnerSummary._sum.headcount);
+    const totalReviews = reviewSummary._count._all;
+    const avgRating = reviewSummary._avg.rating ?? 0;
 
     return {
-      totalDinners: dinners.length,
+      totalDinners,
       totalAmount,
       avgPerPerson: totalHeadcount > 0 ? Math.round(totalAmount / totalHeadcount) : 0,
-      monthlySpending: Object.entries(monthlySpending)
-        .map(([month, amount]) => ({ month, amount, count: monthlyCount[month] || 0 }))
-        .sort((a, b) => a.month.localeCompare(b.month)),
-      categoryDistribution: Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count),
-      memberParticipation: Object.values(memberReviewCount)
-        .sort((a, b) => b.count - a.count),
-      totalReviews: reviews.length,
-      avgRating: calcAvgRating(reviews),
+      monthlySpending: monthlyRows.map((row) => ({
+        month: row.month,
+        amount: this.toNumber(row.amount),
+        count: this.toNumber(row.count),
+      })),
+      categoryDistribution: categoryRows.map((row) => ({
+        category: row.category ?? '기타',
+        count: this.toNumber(row.count),
+      })),
+      memberParticipation: Object.values(memberReviewCount).sort((a, b) => b.count - a.count),
+      totalReviews,
+      avgRating,
     };
   }
 }

@@ -129,6 +129,12 @@ VITE_KAKAO_MAP_KEY=your-kakao-javascript-key
 - `apps/api/src/common/filters/global-exception.filter.ts`는 `HttpException`(비즈니스/검증 예외)과 Prisma 에러(`P2002`, `P2025`)를 공통 응답 포맷으로 변환합니다.
 - 에러 응답은 `message`를 항상 포함하므로 프론트에서 일관된 방식으로 사용자 메시지를 처리할 수 있습니다.
 
+### 쿼리 성능 최적화 예시
+
+- `apps/api/src/stats/stats.service.ts`는 통계 API에서 `findMany` 대량 로딩 대신 `aggregate`, `groupBy`, `queryRaw`를 사용합니다.
+- 월별 지출/카테고리 분포를 DB 레벨에서 집계하여 애플리케이션 메모리 사용량과 불필요한 전송량을 줄였습니다.
+- 멤버별 참여도는 `Review`를 유저별로 `groupBy`해 N+1 조회 패턴을 피합니다.
+
 ### 주요 엔드포인트
 
 | 메서드 | 경로 | 인증 | 설명 |
@@ -212,6 +218,7 @@ pnpm clean        # node_modules 정리
   - `apps/api/src/teams/teams.service.spec.ts`
   - `apps/api/src/reviews/reviews.service.spec.ts`
   - `apps/api/src/gamification/gamification.service.spec.ts`
+  - `apps/api/src/stats/stats.service.spec.ts`
   - `apps/api/src/common/filters/global-exception.filter.spec.ts`
 - 통합(E2E) 테스트
   - `apps/api/test/controllers.e2e-spec.ts`
